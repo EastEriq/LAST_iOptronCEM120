@@ -6,12 +6,12 @@ classdef iOptronCEM120 <handle
         HA=NaN;
         Az=NaN;
         Alt=NaN;
-        EastOfPier
         TrackingSpeed=NaN;
     end
     
     properties(GetAccess=public, SetAccess=private)
         Status='unknown';
+        EastOfPier
     end  
     
     properties(Hidden)
@@ -23,14 +23,22 @@ classdef iOptronCEM120 <handle
     end
     
         % non-API-demanded properties, Enrico's judgement
-    properties (Hidden=true) 
+    properties (Hidden) 
         verbose=true; % for stdin debugging
         serial_resource % the serial object corresponding to Port
     end
     
-    properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
+    properties (Hidden, GetAccess=public, SetAccess=private, Transient)
         fullStatus % complete status as returned by the mount, including time, track, etc.
         lastError='';
+    end
+    
+    properties(Hidden,Constant)
+        sidereal=360/86164.0905; %sidereal tracking rate, degrees/sec
+         % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
+         % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
+         % Constant property
+        slewRate=2.5;
     end
 
     methods
@@ -48,7 +56,7 @@ classdef iOptronCEM120 <handle
     
     methods
         % setters and getters
-                function AZ=get.Az(I)
+        function AZ=get.Az(I)
             resp=I.query('GAC');
             AZ=str2double(resp(10:18))/360000;
         end
@@ -61,6 +69,12 @@ classdef iOptronCEM120 <handle
             else
                 I.lastError='';
             end
+        end
+        
+        function eop=get.EastOfPier(I)
+            % true if east, false if west. Just based on the azimut angle,
+            %  assuming that the mount is polar aligned
+            eop=I.Az<90;
         end
         
         function ALT=get.Alt(I)
@@ -141,6 +155,11 @@ classdef iOptronCEM120 <handle
             end
         end
         
+        function flag=get.TimeFromGPS(I)
+            flag=strcmp(I.fullStatus.GPS,'valid') &&...
+                 strcmp(I.fullStatus.timesource,'GPS');
+        end
+        
         function s=get.Status(I)
             % motion state only, generic API form
             switch I.fullStatus.motion
@@ -154,13 +173,85 @@ classdef iOptronCEM120 <handle
                     s='home';
                 case {"track without PEC","track with PEC"}
                     s='tracking';
-                case { "meridian flipping","auto-guiding"}
+                case {"meridian flipping","auto-guiding"}
                     s='unknown'; % what else we could say...
                 otherwise
                     s='unknown';
             end
         end
+        
+        % tracking implemented by setting the property TrackingSpeed.
+        %  using custom tracking mode, which allows the broadest range
+        
+        function s=get.TrackingSpeed(I)
+            % tracking speed returned in degrees/sec
+            if I.isTracking
+                resp=I.query('GTR');
+                s=str2double(resp(1:end-1))*I.sidereal/10000;
+            else
+                s=0;
+            end
+        end
 
+        function set.TrackingSpeed(I,s)
+            % set tracking speed in deg/sec, and start tracking immediately
+            %  at that speed. Use the iOprtonCEM120 custom
+            %  tracking rates, limited to 0.1-:-1.9*sidereal, or 0, meaning
+            %  stop tracking
+            rate=s/I.sidereal;
+            I.lastError='';
+            if s==0
+                I.query('ST0');
+            elseif rate>=0.1 && rate<=1.9
+                I.query('RT4');
+                I.query(sprintf('RR%05d',int32(rate*10000)));
+                I.query('ST1');
+            elseif rate>0 && rate <0.1
+                msg='demanded tracking rate too small';
+                I.lastError=msg;
+                I.report([msg,'\n'])
+            elseif rate>1.9
+                msg='demanded tracking rate too large';
+                I.lastError=msg;
+                I.report([msg,'\n'])
+            end
+        end
+
+% functioning parameters getters/setters & misc
+        
+        function alt=get.MinAlt(I)
+            resp=I.query('GAL');
+            alt=str2double(resp(1:3));
+        end
+        
+        function set.MinAlt(I,alt)
+            if alt<-89 || alt>89
+                error('altitude limit illegal')
+            else
+                I.query(sprintf('SAL%+03d',round(alt)));
+            end
+        end
+       
+        function p=get.ParkPos(I)
+            resp=I.query('GPC');
+            p=[str2double(resp(9:17))/360000,...
+               str2double(resp(1:8))/360000];
+        end
+
+        function set.ParkPos(I,pos)
+            % set park position (Az,Alt) in degrees
+            if (pos(1)>=0 && pos(1)<=360) && ...
+                (pos(2)>=0 && pos(2)<=90)
+                I.lastError='';
+                I.query(sprintf('SPA%08d',int32(pos(1)*360000)));
+                I.query(sprintf('SPH%08d',int32(pos(2)*360000)));
+            else
+                msg='invalid parking position';
+                I.lastError=msg;
+                I.report([msg,'\n'])
+            end
+        end
+        
     end
-    
+
 end

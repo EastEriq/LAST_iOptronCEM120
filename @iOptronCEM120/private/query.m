@@ -26,6 +26,8 @@
                 if ~strcmp(resp(end),'#') && ...
                         (numel(resp)==1 && ~(resp=='0' || resp=='1'))
                     I.lastError='Response from mount incomplete';
+                else
+                    I.lastError='';
                 end
             catch
                 I.lastError='cannot read from serial resource';
