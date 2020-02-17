@@ -29,6 +29,7 @@ classdef iOptronCEM120 <handle
     end
     
     properties (Hidden=true, GetAccess=public, SetAccess=private, Transient)
+        fullStatus % complete status as returned by the mount, including time, track, etc.
         lastError='';
     end
 
@@ -56,7 +57,9 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('Sz%09d',int32(AZ*360000)));
             resp=I.query('MSS');
             if resp~='1'
-                error('target position beyond limits')
+                I.lastError='target Az beyond limits';
+            else
+                I.lastError='';
             end
         end
         
@@ -69,7 +72,9 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('Sa%+09d',int32(ALT*360000)));
             resp=I.query('MSS');
             if resp~='1'
-                error('target position beyond limits')
+                I.lastError='target Alt beyond limits';
+            else
+                I.lastError='';
             end
         end
         
@@ -82,7 +87,9 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('Sd%+08d',int32(DEC*360000)));
             resp=I.query('MS1');
             if resp~='1'
-                error('target position beyond limits')
+                I.lastError='target Dec beyond limits';
+            else
+                I.lastError='';
             end
         end
         
@@ -99,7 +106,58 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('SRA%09d',int32(RA*360000)));
             resp=I.query('MS1'); % choose counterweight down for now
             if resp~='1'
-                error('target position beyond limits')
+                I.lastError='target RA beyond limits';
+            else
+                I.lastError='';
+            end
+        end
+
+        function S=get.fullStatus(I)
+            % read the full status information as given by iOptron
+            % state enumerations - let the function error if an out-of
+            %  -range value is returned
+            gpsstate=["No GPS","no data","valid"];
+            motionstate=["stopped","track without PEC","slew","auto-guiding",...
+                         "meridian flipping","track with PEC","parked",...
+                         "at home"];
+            trackingrate=["sidereal","lunar","solar","King","custom"];
+            keyspeed=["1x","2x","4x","8x","16x","32x","64x","128x",...
+                      "256x","512x","max"];
+            timesource=["communicated","hand controller","GPS"];
+            hemisphere=["South","North"];
+            resp=I.query('GLS');
+            try
+                S=struct('Lon',str2double(resp(1:9))/360000,...
+                         'Lat',str2double(resp(10:17))/360000-90,...
+                         'GPS',gpsstate(str2double(resp(18))+1),...
+                         'motion',motionstate(str2double(resp(19))+1),...
+                         'tracking',trackingrate(str2double(resp(20))+1),...
+                         'keyspeed',keyspeed(str2double(resp(21))+1),...
+                         'timesource',timesource(str2double(resp(22))+1),...
+                         'hempisphere',hemisphere(str2double(resp(23))+1) );
+            catch
+                S=[];
+                I.lastError='incorrect status string returned by the mount';
+            end
+        end
+        
+        function s=get.Status(I)
+            % motion state only, generic API form
+            switch I.fullStatus.motion
+                case "stopped"
+                    s='idle';
+                case "slew"
+                    s='slewing';
+                case "parked"
+                    s='park';
+                case "at home"
+                    s='home';
+                case {"track without PEC","track with PEC"}
+                    s='tracking';
+                case { "meridian flipping","auto-guiding"}
+                    s='unknown'; % what else we could say...
+                otherwise
+                    s='unknown';
             end
         end
 
