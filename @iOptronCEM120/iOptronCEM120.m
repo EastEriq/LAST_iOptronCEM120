@@ -3,7 +3,6 @@ classdef iOptronCEM120 <handle
     properties
         RA=NaN;
         Dec=NaN;
-        HA=NaN;
         Az=NaN;
         Alt=NaN;
         TrackingSpeed=NaN;
