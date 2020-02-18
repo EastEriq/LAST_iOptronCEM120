@@ -19,6 +19,7 @@ classdef iOptronCEM120 <handle
         TimeFromGPS
         ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
         MinAlt=15;
+        preferEastOfPier=true; % TO IMPLEMENT
     end
     
         % non-API-demanded properties, Enrico's judgement
