@@ -10,14 +10,14 @@ classdef iOptronCEM120 <handle
     
     properties(GetAccess=public, SetAccess=private)
         Status='unknown';
-        EastOfPier
+        isEastOfPier
     end  
     
     properties(Hidden)
         Port='';
         MountPos=struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
         TimeFromGPS
-        ParkPos=[0,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
+        ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
         MinAlt=15;
     end
     
@@ -70,7 +70,7 @@ classdef iOptronCEM120 <handle
             end
         end
         
-        function eop=get.EastOfPier(I)
+        function eop=get.isEastOfPier(I)
             % true if east, false if west. Just based on the azimut angle,
             %  assuming that the mount is polar aligned
             eop=I.Az<90;

@@ -4,15 +4,15 @@ function GoTo(I,x,y,coordtype)
         coordtype='eq';
     end
     I.lastError='';
-    switch coordtype
+    switch lower(coordtype)
         case 'eq'
             I.RA=x;
             I.Dec=y;
-        case {'hor','AzAlt'}
+        case {'hor','azalt'}
             I.Az=x;
             I.Alt=y;
         otherwise
-            msg='unknow coodinate system; use "eq" or "AzAlt" / "hor"';
+            msg='unknown coodinate system; use "eq" or "AzAlt" / "hor"';
             I.report([msg,'\n'])
             I.lastError=msg;
     end
