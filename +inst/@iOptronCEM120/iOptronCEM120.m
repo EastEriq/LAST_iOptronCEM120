@@ -16,7 +16,8 @@ classdef iOptronCEM120 <handle
     
     properties(Hidden)
         Port='';
-        MountPos=struct('ObsLon',NaN,'ObsLat',NaN,'ObsHeight',NaN);
+        MountPos=[NaN,NaN,NaN];
+        Time
         TimeFromGPS
         ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
         MinAlt=15;
@@ -239,15 +240,15 @@ classdef iOptronCEM120 <handle
         
         function lim=get.MeridianLimit(I)
             resp=I.query('GMT');
-            lim=str2double(resp(2:3));
+            lim=str2double(resp(2:3))+90;
         end
         
         function set.MeridianLimit(I,limit)
             % degrees past meridian where to perform the flip
-            if limit<0 || limit>14
+            if limit<90 || limit>104
                 I.reportError('meridian flip limit illegal')
             else
-                I.query(sprintf('SMT%01d%02d',I.MeridianFlip,round(limit)));
+                I.query(sprintf('SMT%01d%02d',I.MeridianFlip,round(limit)+90));
             end
         end
         
@@ -282,6 +283,30 @@ classdef iOptronCEM120 <handle
             end
         end
         
+        function pos=get.MountPos(I)
+            pos=[I.fullStatus.Lon,I.fullStatus.Lat,I.MountPos(3)];
+        end
+            
+        function set.MountPos(I,pos)
+            % tell the mount longitude and latitude, only when
+            % the GPS is not working. Height is not stored in the mount
+            if ~strcmp(I.fullStatus.GPS,'valid')
+                I.Query(sprintf('SLO%+09d',int32(pos(1)*360000)));
+                I.Query(sprintf('SLA%+09d',int32(pos(2)*360000)));
+                % I don't understand why the mount needs a separate entry for
+                %   the hemisphere, since latitude is signed
+                hem=(pos(2)>0);
+                if hem
+                    % 1 is north
+                    I.Query('SHE1');
+                else
+                    % 0 is south
+                    I.Query('SHE0');
+                end
+            end
+            I.MountPos(3)=pos(3);
+        end
+
     end
 
 end

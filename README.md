@@ -7,11 +7,10 @@ It is left to the responsibility of the LAST integrator to copy or link the file
 
 ## TODO:
 
-+ getters and setters for time, Lat, Lon, Heigth when not supplied by the GPS (this GPS does not
- return height, in any event)
-
-+ implement `preferEastOfPier`. Reason for not doing: the mount can only be instructed to prefer      counterweight position. That alone is not sufficient to determine EoP, without knowing Az; but when slewing to given RA,dec the driver doesn't know which Az would result, unless the coordinate conversions are made known to the driver.
++ getters and setters for time when not supplied by the GPS
 
 + implement parking to Alt<0 as a GoTo. Reason for doing: its a must for functionality.
   Reason for not doing: it is convenient to query the mount about its set park position,
-  but the firmware allows only setting positive park Alt.
+  but the firmware allows only setting positive park Alt. The park position stored into
+  the mount survives across power cycles and matlab sessions, an alternative park position
+  property stored in the class, not.
