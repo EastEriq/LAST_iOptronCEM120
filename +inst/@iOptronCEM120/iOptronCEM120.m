@@ -38,7 +38,7 @@ classdef iOptronCEM120 <handle
     end
     
     properties(Hidden,Constant)
-        sidereal=360/86164.0905; %sidereal tracking rate, degrees/sec
+        siderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
          % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
          % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
          % Constant property
@@ -201,7 +201,7 @@ classdef iOptronCEM120 <handle
             % tracking speed returned in degrees/sec
             if I.isTracking
                 resp=I.query('GTR');
-                s=str2double(resp(1:end-1))*I.sidereal/10000;
+                s=str2double(resp(1:end-1))*I.siderealRate/10000;
             else
                 s=0;
             end
@@ -212,7 +212,7 @@ classdef iOptronCEM120 <handle
             %  at that speed. Use the iOprtonCEM120 custom
             %  tracking rates, limited to 0.1-:-1.9*sidereal, or 0, meaning
             %  stop tracking
-            rate=s/I.sidereal;
+            rate=s/I.siderealRate;
             I.lastError='';
             if s==0
                 I.query('ST0');
