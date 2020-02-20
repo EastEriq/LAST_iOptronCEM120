@@ -1,6 +1,6 @@
-        % verbose reporting
-        function report(N,msg)
-            if N.verbose
-                fprintf(msg)
-            end
-        end
+function report(N,msg)
+% report on stdout if verbose is true
+    if N.verbose
+        fprintf(msg)
+    end
+end

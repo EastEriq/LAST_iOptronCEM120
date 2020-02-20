@@ -11,6 +11,7 @@ classdef iOptronCEM120 <handle
     properties(GetAccess=public, SetAccess=private)
         Status='unknown';
         isEastOfPier
+        isCounterweightDown
     end  
     
     properties(Hidden)
@@ -19,7 +20,9 @@ classdef iOptronCEM120 <handle
         TimeFromGPS
         ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
         MinAlt=15;
-        preferEastOfPier=true; % TO IMPLEMENT
+        CounterweightDown=true; % Test that this works as expected
+        MeridianFlip=true; % if false, stop at the meridian limit
+        MeridianLimit=92; % Test that this works as expected, no idea what happens
     end
     
         % non-API-demanded properties, Enrico's judgement
@@ -65,16 +68,22 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('Sz%09d',int32(AZ*360000)));
             resp=I.query('MSS');
             if resp~='1'
-                I.lastError='target Az beyond limits';
+                I.reportError('target Az beyond limits');
             else
                 I.lastError='';
             end
         end
         
         function eop=get.isEastOfPier(I)
-            % true if east, false if west. Just based on the azimut angle,
-            %  assuming that the mount is polar aligned
-            eop=I.Az<90;
+            % true if east, false if west.
+            %  Assuming that the mount is polar aligned
+            resp=I.query('GEP');
+            eop=(resp(19)=='0');
+        end
+        
+        function cwd=get.isCounterweightDown(I)
+            resp=I.query('GEP');
+            cwd=(resp(20)=='1');
         end
         
         function ALT=get.Alt(I)
@@ -86,7 +95,7 @@ classdef iOptronCEM120 <handle
             I.query(sprintf('Sa%+09d',int32(ALT*360000)));
             resp=I.query('MSS');
             if resp~='1'
-                I.lastError='target Alt beyond limits';
+                I.reportError('target Alt beyond limits');
             else
                 I.lastError='';
             end
@@ -99,9 +108,13 @@ classdef iOptronCEM120 <handle
         
         function set.Dec(I,DEC)
             I.query(sprintf('Sd%+08d',int32(DEC*360000)));
-            resp=I.query('MS1');
+            if I.CounterweightDown
+                resp=I.query('MS1');
+            else
+                resp=I.query('MS2');
+            end
             if resp~='1'
-                I.lastError='target Dec beyond limits';
+                I.reportError('target Dec beyond limits');
             else
                 I.lastError='';
             end
@@ -112,15 +125,15 @@ classdef iOptronCEM120 <handle
             RA=str2double(resp(10:18))/360000;
         end
         
-        % East or West of pier, and counterweight positions could
-        %  be read from the last two digits of the answer to GEP.
-        %  However, they should also be understandable from Az and Alt (?)
- 
         function set.RA(I,RA)
             I.query(sprintf('SRA%09d',int32(RA*360000)));
-            resp=I.query('MS1'); % choose counterweight down for now
+            if I.CounterweightDown
+                resp=I.query('MS1');
+            else
+                resp=I.query('MS2');
+            end
             if resp~='1'
-                I.lastError='target RA beyond limits';
+                I.reportError('target RA beyond limits');
             else
                 I.lastError='';
             end
@@ -207,17 +220,36 @@ classdef iOptronCEM120 <handle
                 I.query(sprintf('RR%05d',int32(rate*10000)));
                 I.query('ST1');
             elseif rate>0 && rate <0.1
-                msg='demanded tracking rate too small';
-                I.lastError=msg;
-                I.report([msg,'\n'])
+                I.reportError('demanded tracking rate too small')
             elseif rate>1.9
-                msg='demanded tracking rate too large';
-                I.lastError=msg;
-                I.report([msg,'\n'])
+                I.reportError('demanded tracking rate too large')
             end
         end
 
 % functioning parameters getters/setters & misc
+        
+        function flip=get.MeridianFlip(I)
+            resp=I.query('GMT');
+            flip=(resp(1)=='1');
+        end
+        
+        function set.MeridianFlip(I,flip)
+            I.query(sprintf('SMT%01d%02d',round(flip),I.MeridianLimit));
+        end
+        
+        function lim=get.MeridianLimit(I)
+            resp=I.query('GMT');
+            lim=str2double(resp(2:3));
+        end
+        
+        function set.MeridianLimit(I,limit)
+            % degrees past meridian where to perform the flip
+            if limit<0 || limit>14
+                I.reportError('meridian flip limit illegal')
+            else
+                I.query(sprintf('SMT%01d%02d',I.MeridianFlip,round(limit)));
+            end
+        end
         
         function alt=get.MinAlt(I)
             resp=I.query('GAL');
@@ -226,7 +258,7 @@ classdef iOptronCEM120 <handle
         
         function set.MinAlt(I,alt)
             if alt<-89 || alt>89
-                error('altitude limit illegal')
+                I.reportError('altitude limit illegal')
             else
                 I.query(sprintf('SAL%+03d',round(alt)));
             end
@@ -246,9 +278,7 @@ classdef iOptronCEM120 <handle
                 I.query(sprintf('SPA%08d',int32(pos(1)*360000)));
                 I.query(sprintf('SPH%08d',int32(pos(2)*360000)));
             else
-                msg='invalid parking position';
-                I.lastError=msg;
-                I.report([msg,'\n'])
+                I.reportError('invalid parking position');
             end
         end
         
