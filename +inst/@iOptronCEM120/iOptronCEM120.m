@@ -15,8 +15,11 @@ classdef iOptronCEM120 <handle
     end  
     
     properties(Hidden)
+        MountType = NaN;
+        MountModel = NaN;
         Port='';
         MountPos=[NaN,NaN,NaN];
+        MountUTC
         Time
         TimeFromGPS
         ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
@@ -291,22 +294,39 @@ classdef iOptronCEM120 <handle
             % tell the mount longitude and latitude, only when
             % the GPS is not working. Height is not stored in the mount
             if ~strcmp(I.fullStatus.GPS,'valid')
-                I.Query(sprintf('SLO%+09d',int32(pos(1)*360000)));
-                I.Query(sprintf('SLA%+09d',int32(pos(2)*360000)));
+                I.query(sprintf('SLO%+09d',int32(pos(1)*360000)));
+                I.query(sprintf('SLA%+09d',int32(pos(2)*360000)));
                 % I don't understand why the mount needs a separate entry for
                 %   the hemisphere, since latitude is signed
                 hem=(pos(2)>0);
                 if hem
                     % 1 is north
-                    I.Query('SHE1');
+                    I.query('SHE1');
                 else
                     % 0 is south
-                    I.Query('SHE0');
+                    I.query('SHE0');
                 end
             end
             I.MountPos(3)=pos(3);
         end
 
+        function MountUTC=get.MountUTC(I)
+            % Returns mount UTC clock. Units: Julian Date
+            J2000 = 2451545.0;
+            MiliSecPerDay = 86400000;
+            resp=I.query('GUT');
+            MountUTC=str2double(resp(6:18))./MiliSecPerDay + J2000;
+        end
+            
+        function set.MountUTC(I, dummy)
+            % Set the mount UTC clock from the computer clock. Units: Julian Date - use with care
+            
+            J2000 = 2451545.0;
+            MiliSecPerDay = 86400000;
+            I.query(sprintf('SUT%013d',round((celestial.time.julday-J2000).*MiliSecPerDay)));
+        end
+
+     
     end
 
 end

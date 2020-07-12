@@ -1,8 +1,9 @@
 function ismount=check_for_mount(I)
     try
-        model=I.query('MountInfo');
-        ismount=strcmp(model(1:3),'012');
-        I.lastError='';
+        % Mount's model
+        model = I.query('MountInfo');
+        ismount = strcmp(model(1:3),'012');
+        I.lastError = '';
     catch
         ismount=false;
         I.lastError=['not able to check for Focus Motor on ' I.Port];
@@ -19,6 +20,10 @@ function ismount=check_for_mount(I)
             otherwise
                 name='CEM120-???';
         end
+        
+        I.MountType = 'iOptron';
+        I.MountModel = name;
+
         I.report(['mount iOptron ' name ' found on ',I.Port,'\n'])
     else
         I.report(['no iOptron CEM120 mount found on ',I.Port,'\n'])

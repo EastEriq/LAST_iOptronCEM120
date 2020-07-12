@@ -1,6 +1,7 @@
-function I=connect(I,Port)
+function success=connect(I,Port)
 % connect to a focus motor on the specified Port, try all ports if
 %  Port omitted
+   success = 0;
     if ~exist('Port','var') || isempty(Port)
         for Port=seriallist
             try
@@ -9,6 +10,7 @@ function I=connect(I,Port)
                 %  look for a named (i.e. SN) unit
                 I.connect(Port);
                 if isempty(I.lastError)
+                    success = 1;
                     return
                 else
                     delete(instrfind('Port',Port))
@@ -40,7 +42,7 @@ function I=connect(I,Port)
             set(I.serial_resource,'BaudRate',115200,'Timeout',1);
         end
         I.Port=I.serial_resource.Port;
-        check_for_mount(I);
+        success = check_for_mount(I);
     catch
         I.lastError=['Port ' Port ' cannot be opened'];
         delete(instrfind('Port',Port)) % (catch also error here?)

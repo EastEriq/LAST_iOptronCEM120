@@ -1,5 +1,5 @@
 function park(I,parking)
-% parks the mount, idf parking=true, unparks it if false
+% parks the mount if parking=true, unparks it if false
     if ~exist('parking','var')
         parking=true;
     end
