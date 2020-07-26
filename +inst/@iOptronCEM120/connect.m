@@ -1,11 +1,11 @@
 function success=connect(I,Port)
-% connect to a focus motor on the specified Port, try all ports if
+% connect to an iOptron mount on the specified Port, try all ports if
 %  Port omitted
    success = 0;
     if ~exist('Port','var') || isempty(Port)
         for Port=seriallist
             try
-                % look for one NexStar device on every
+                % look for one iOptron mount on every
                 %  possible serial port. Pity we cannot
                 %  look for a named (i.e. SN) unit
                 I.connect(Port);

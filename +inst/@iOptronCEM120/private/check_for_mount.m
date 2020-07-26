@@ -6,7 +6,7 @@ function ismount=check_for_mount(I)
         I.lastError = '';
     catch
         ismount=false;
-        I.lastError=['not able to check for Focus Motor on ' I.Port];
+        I.lastError=['not able to check for iOptron mount on ' I.Port];
     end
 
     if ismount
