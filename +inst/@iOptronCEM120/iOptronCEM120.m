@@ -17,7 +17,7 @@ classdef iOptronCEM120 <handle
     properties(Hidden)
         MountType = NaN;
         MountModel = NaN;
-        Port='';
+        Port=''; % either the serial port device, or the tcpip address (port 8080 assumed)
         MountPos=[NaN,NaN,NaN];
         MountUTC
         Time
@@ -32,7 +32,7 @@ classdef iOptronCEM120 <handle
         % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
         verbose=true; % for stdin debugging
-        serial_resource % the serial object corresponding to Port
+        serial_resource % the serial or the tcpip object corresponding to Port
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
