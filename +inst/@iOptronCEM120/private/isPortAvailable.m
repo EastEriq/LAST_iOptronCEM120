@@ -9,7 +9,8 @@ function avail=isPortAvailable(M)
 
     if isa(M.serial_resource,'tcpip')
         % hopefully 1 ping is enough - eventually fine tune. However, only
-        %  su can ping more frequently than every 0.2sec
+        %  su can ping more frequently than every 0.2sec, so more than one
+        %  repetition would add multiples of 200ms + ping time.
         if unix(['ping -c 1 -i 0.2 -w 2 ' M.Port '>/dev/null'])
             portlist='';
         else
