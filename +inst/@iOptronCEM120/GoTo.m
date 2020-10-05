@@ -7,7 +7,7 @@ function GoTo(I,x,y,coordtype)
     if ~exist('coordtype','var')
         coordtype='eq';
     end
-    I.lastError='';
+    I.LastError='';
     switch lower(coordtype)
         case 'eq'
             I.RA=x;
@@ -18,7 +18,7 @@ function GoTo(I,x,y,coordtype)
         otherwise
             msg='unknown coodinate system; use "eq" or "AzAlt" / "hor"';
             I.report([msg,'\n'])
-            I.lastError=msg;
+            I.LastError=msg;
     end
 end
             

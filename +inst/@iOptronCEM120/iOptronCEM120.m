@@ -10,8 +10,8 @@ classdef iOptronCEM120 <handle
     
     properties(GetAccess=public, SetAccess=private)
         Status='unknown';
-        isEastOfPier
-        isCounterweightDown
+        IsEastOfPier
+        IsCounterWeightDown
     end  
     
     properties(Hidden)
@@ -24,7 +24,7 @@ classdef iOptronCEM120 <handle
         TimeFromGPS
         ParkPos=[180,-30]; % park pos in [Az,Alt] (negative Alt is probably impossible)
         MinAlt=15;
-        CounterweightDown=true; % Test that this works as expected
+        CounterWeightDown=true; % Test that this works as expected
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
     end
@@ -32,12 +32,12 @@ classdef iOptronCEM120 <handle
         % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
         verbose=true; % for stdin debugging
-        serial_resource % the serial or the tcpip object corresponding to Port
+        SerialResource % the serial or the tcpip object corresponding to Port
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
-        fullStatus % complete status as returned by the mount, including time, track, etc.
-        lastError='';
+        FullStatus % complete status as returned by the mount, including time, track, etc.
+        LastError='';
     end
     
     properties(Hidden,Constant)
@@ -55,7 +55,7 @@ classdef iOptronCEM120 <handle
         end
         
         function delete(I)
-            delete(I.serial_resource)
+            delete(I.SerialResource)
             % shall we try-catch and report success/failure?
         end
         
@@ -74,18 +74,18 @@ classdef iOptronCEM120 <handle
             if resp~='1'
                 I.reportError('target Az beyond limits');
             else
-                I.lastError='';
+                I.LastError='';
             end
         end
         
-        function eop=get.isEastOfPier(I)
+        function eop=get.IsEastOfPier(I)
             % true if east, false if west.
             %  Assuming that the mount is polar aligned
             resp=I.query('GEP');
             eop=(resp(19)=='0');
         end
         
-        function cwd=get.isCounterweightDown(I)
+        function cwd=get.IsCounterWeightDown(I)
             resp=I.query('GEP');
             cwd=(resp(20)=='1');
         end
@@ -101,7 +101,7 @@ classdef iOptronCEM120 <handle
             if resp~='1'
                 I.reportError('target Alt beyond limits');
             else
-                I.lastError='';
+                I.LastError='';
             end
         end
         
@@ -112,7 +112,7 @@ classdef iOptronCEM120 <handle
         
         function set.Dec(I,DEC)
             I.query(sprintf('Sd%+08d',int32(DEC*360000)));
-            if I.CounterweightDown
+            if I.CounterWeightDown
                 resp=I.query('MS1');
             else
                 resp=I.query('MS2');
@@ -120,7 +120,7 @@ classdef iOptronCEM120 <handle
             if resp~='1'
                 I.reportError('target Dec beyond limits');
             else
-                I.lastError='';
+                I.LastError='';
             end
         end
         
@@ -131,7 +131,7 @@ classdef iOptronCEM120 <handle
         
         function set.RA(I,RA)
             I.query(sprintf('SRA%09d',int32(RA*360000)));
-            if I.CounterweightDown
+            if I.CounterWeightDown
                 resp=I.query('MS1');
             else
                 resp=I.query('MS2');
@@ -139,11 +139,11 @@ classdef iOptronCEM120 <handle
             if resp~='1'
                 I.reportError('target RA beyond limits');
             else
-                I.lastError='';
+                I.LastError='';
             end
         end
 
-        function S=get.fullStatus(I)
+        function S=get.FullStatus(I)
             % read the full status information as given by iOptron
             % state enumerations - let the function error if an out-of
             %  -range value is returned
@@ -168,18 +168,18 @@ classdef iOptronCEM120 <handle
                          'hempisphere',hemisphere(str2double(resp(23))+1) );
             catch
                 S=[];
-                I.lastError='incorrect status string returned by the mount';
+                I.LastError='incorrect status string returned by the mount';
             end
         end
         
         function flag=get.TimeFromGPS(I)
-            flag=strcmp(I.fullStatus.GPS,'valid') &&...
-                 strcmp(I.fullStatus.timesource,'GPS');
+            flag=strcmp(I.FullStatus.GPS,'valid') &&...
+                 strcmp(I.FullStatus.timesource,'GPS');
         end
         
         function s=get.Status(I)
             % motion state only, generic API form
-            switch I.fullStatus.motion
+            switch I.FullStatus.motion
                 case "stopped"
                     s='idle';
                 case "slew"
@@ -216,7 +216,7 @@ classdef iOptronCEM120 <handle
             %  tracking rates, limited to 0.1-:-1.9*sidereal, or 0, meaning
             %  stop tracking
             rate=s/I.siderealRate;
-            I.lastError='';
+            I.LastError='';
             if s==0
                 I.query('ST0');
             elseif rate>=0.1 && rate<=1.9
@@ -278,7 +278,7 @@ classdef iOptronCEM120 <handle
             % set park position (Az,Alt) in degrees
             if (pos(1)>=0 && pos(1)<=360) && ...
                 (pos(2)>=0 && pos(2)<=90)
-                I.lastError='';
+                I.LastError='';
                 I.query(sprintf('SPA%08d',int32(pos(1)*360000)));
                 I.query(sprintf('SPH%08d',int32(pos(2)*360000)));
             else
@@ -287,13 +287,13 @@ classdef iOptronCEM120 <handle
         end
         
         function pos=get.MountPos(I)
-            pos=[I.fullStatus.Lon,I.fullStatus.Lat,I.MountPos(3)];
+            pos=[I.FullStatus.Lon,I.FullStatus.Lat,I.MountPos(3)];
         end
             
         function set.MountPos(I,pos)
             % tell the mount longitude and latitude, only when
             % the GPS is not working. Height is not stored in the mount
-            if ~strcmp(I.fullStatus.GPS,'valid')
+            if ~strcmp(I.FullStatus.GPS,'valid')
                 I.query(sprintf('SLO%+09d',int32(pos(1)*360000)));
                 I.query(sprintf('SLA%+09d',int32(pos(2)*360000)));
                 % I don't understand why the mount needs a separate entry for

@@ -7,7 +7,7 @@ function avail=isPortAvailable(M)
 
     %tic   
 
-    if isa(M.serial_resource,'tcpip')
+    if isa(M.SerialResource,'tcpip')
         % hopefully 1 ping is enough - eventually fine tune. However, only
         %  su can ping more frequently than every 0.2sec, so more than one
         %  repetition would add multiples of 200ms + ping time.
@@ -24,13 +24,13 @@ function avail=isPortAvailable(M)
     if ~avail
         M.report("Serial "+M.Port+' disappeared from system, closing it\n')
         try
-            if isa(M.serial_resource,'tcpip')
+            if isa(M.SerialResource,'tcpip')
                 delete(instrfind('RemoteHost',M.Port))
             else
                 delete(instrfind('Port',Port))
             end
         catch
-            M.lastError=['cannot delete Port object ' M.Port ' -maybe OS disconnected it?'];
+            M.LastError=['cannot delete Port object ' M.Port ' -maybe OS disconnected it?'];
         end
     end
     

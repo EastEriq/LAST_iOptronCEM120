@@ -14,6 +14,7 @@ for i=1:ntest
             fprintf('     Az=%.2f, Alt=%.2f\n',M.Az,M.Alt)
             pause(0.5)
         end
+        pause(10)
     end
     M.home
     fprintf(' homing')

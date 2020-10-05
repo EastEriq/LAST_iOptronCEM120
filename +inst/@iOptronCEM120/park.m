@@ -3,16 +3,16 @@ function park(I,parking)
     if ~exist('parking','var')
         parking=true;
     end
-    I.lastError='';
+    I.LastError='';
     if parking
         resp=I.query('MP1');
         if resp~='1'
-            I.lastError='parking mount failed';
+            I.LastError='parking mount failed';
         end
     else
         resp=I.query('MP0');
         if resp~='1'
-            I.lastError='unparking mount failed';
+            I.LastError='unparking mount failed';
         end
     end
 end

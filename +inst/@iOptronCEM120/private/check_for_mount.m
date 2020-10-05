@@ -3,10 +3,10 @@ function ismount=check_for_mount(I)
         % Mount's model
         model = I.query('MountInfo');
         ismount = strcmp(model(1:3),'012');
-        I.lastError = '';
+        I.LastError = '';
     catch
         ismount=false;
-        I.lastError=['not able to check for iOptron mount on ' I.Port];
+        I.LastError=['not able to check for iOptron mount on ' I.Port];
     end
 
     if ismount
@@ -27,6 +27,6 @@ function ismount=check_for_mount(I)
         I.report(['mount iOptron ' name ' found on ',I.Port,'\n'])
     else
         I.report(['no iOptron CEM120 mount found on ',I.Port,'\n'])
-        I.lastError=['no iOptron CEM120 mount found on ',I.Port];
+        I.LastError=['no iOptron CEM120 mount found on ',I.Port];
     end
 end
