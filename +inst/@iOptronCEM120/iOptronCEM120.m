@@ -42,10 +42,7 @@ classdef iOptronCEM120 <handle
     end
     
     properties(Hidden,Constant)
-        SiderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
-         % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
-         % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
-         % Constant property
+        SiderealRate=360/86164.0905; % Sidereal tracking rate constant, degrees/sec
     end
 
     methods
