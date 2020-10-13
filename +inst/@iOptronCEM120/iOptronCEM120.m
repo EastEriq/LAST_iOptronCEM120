@@ -5,7 +5,7 @@ classdef iOptronCEM120 <handle
         Dec=NaN;
         Az=NaN;
         Alt=NaN;
-        TrackingSpeed=NaN;
+        TrackingSpeed=NaN; % in degrees/sec, limited to 0.1÷1.9*sidereal, or 0=no tracking
     end
     
     properties(GetAccess=public, SetAccess=private)
@@ -27,6 +27,7 @@ classdef iOptronCEM120 <handle
         CounterWeightDown=true; % Test that this works as expected
         MeridianFlip=true; % if false, stop at the meridian limit
         MeridianLimit=92; % Test that this works as expected, no idea what happens
+        SlewSpeed % 7 = 256 x Sidereal; 8 = 512 x Sidereal; 9 = max (about 4°/sec)
     end
     
         % non-API-demanded properties, Enrico's judgement
@@ -41,11 +42,10 @@ classdef iOptronCEM120 <handle
     end
     
     properties(Hidden,Constant)
-        siderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
+        SiderealRate=360/86164.0905; %sidereal tracking rate, degrees/sec
          % empirical slewing rate (fixed?), degrees/sec, excluding accelerations
          % if it could be varied (see ':GSR#'/':MSRn#'), this won't be a 
          % Constant property
-        slewRate=2.5;
     end
 
     methods
@@ -204,7 +204,7 @@ classdef iOptronCEM120 <handle
             % tracking speed returned in degrees/sec
             if I.isTracking
                 resp=I.query('GTR');
-                s=str2double(resp(1:end-1))*I.siderealRate/10000;
+                s=str2double(resp(1:end-1))*I.SiderealRate/10000;
             else
                 s=0;
             end
@@ -215,7 +215,7 @@ classdef iOptronCEM120 <handle
             %  at that speed. Use the iOprtonCEM120 custom
             %  tracking rates, limited to 0.1-:-1.9*sidereal, or 0, meaning
             %  stop tracking
-            rate=s/I.siderealRate;
+            rate=s/I.SiderealRate;
             I.LastError='';
             if s==0
                 I.query('ST0');
@@ -319,11 +319,31 @@ classdef iOptronCEM120 <handle
         end
             
         function set.MountUTC(I, dummy)
-            % Set the mount UTC clock from the computer clock. Units: Julian Date - use with care
-            
+            % Set the mount UTC clock from the computer clock. Units: Julian Date - use with care           
             J2000 = 2451545.0;
             MiliSecPerDay = 86400000;
             I.query(sprintf('SUT%013d',round((celestial.time.julday-J2000).*MiliSecPerDay)));
+        end
+
+        function s=get.SlewSpeed(I)
+            % Get the current slew speed (7,8 or 9)
+            % Working ONLY with firmware 2009.20
+            %  7 = 256 x Sidereal; 8 = 512 x Sidereal; 9 = max (about 4°/sec)
+            resp=I.query('GSR');
+            s=str2double(resp(1));
+        end
+        
+        function set.SlewSpeed(I,s)
+            % Set the current slew speed (7,8 or 9)
+            % Working ONLY with firmware 2009.20
+            %  7 = 256 x Sidereal; 8 = 512 x Sidereal; 9 = max (about 4°/sec)
+            if s>=7 && s<=9
+                I.query(sprintf('MSR%1d',s));
+            elseif s<7
+                I.reportError('demanded slew rate too small, should be >=7')
+            elseif s>9
+                I.reportError('demanded slew rate too large, should be <=9')
+            end
         end
 
      
