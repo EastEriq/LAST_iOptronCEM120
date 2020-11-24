@@ -1,4 +1,4 @@
-function GoTo(I,x,y,coordtype)
+function goTo(I,x,y,coordtype)
 % shorthand function equivalent to setting Az,Alt or Ra,dec in a single step
 % Arguments: x:          RA or Az
 %            y:          Dec or Alt
@@ -16,7 +16,7 @@ function GoTo(I,x,y,coordtype)
             I.Az=x;
             I.Alt=y;
         otherwise
-            msg='unknown coodinate system; use "eq" or "AzAlt" / "hor"';
+            msg='unknown coordinate system; use "eq" or "AzAlt" / "hor"';
             I.report([msg,'\n'])
             I.LastError=msg;
     end
