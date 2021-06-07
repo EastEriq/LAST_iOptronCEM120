@@ -1,4 +1,4 @@
-classdef iOptronCEM120 <handle
+classdef iOptronCEM120 < obs.LAST_Handle
 
     properties
         RA=NaN;
@@ -32,13 +32,11 @@ classdef iOptronCEM120 <handle
     
         % non-API-demanded properties, Enrico's judgement
     properties (Hidden) 
-        verbose=true; % for stdin debugging
         SerialResource % the serial or the tcpip object corresponding to Port
     end
     
     properties (Hidden, GetAccess=public, SetAccess=private, Transient)
         FullStatus % complete status as returned by the mount, including time, track, etc.
-        LastError='';
     end
     
     properties(Hidden,Constant)
