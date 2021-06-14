@@ -8,6 +8,11 @@ classdef iOptronCEM120 < obs.LAST_Handle
         TrackingSpeed=NaN; % in degrees/sec, limited to 0.1÷1.9*sidereal, or 0=no tracking
     end
     
+    properties(Hidden,GetAccess=public, SetAccess=immutable)
+        % readonly, never changed
+        CoordType='J2000'; % mount coordinates are referenced as J2000
+    end
+
     properties(GetAccess=public, SetAccess=private)
         Status='unknown';
         IsEastOfPier
