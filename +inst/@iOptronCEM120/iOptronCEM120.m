@@ -50,7 +50,7 @@ classdef iOptronCEM120 < obs.LAST_Handle
 
     methods
         % constructor and destructor
-        function I=iOptronCEM120()
+        function I=iOptronCEM120(id)
             % does nothing, connecting to port in a separate method
         end
         
