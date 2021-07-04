@@ -1,5 +1,4 @@
-classdef iOptronCEM120 < obs.LAST_Handle
-
+classdef iOptronCEM120 < obs.mount
     properties
         RA=NaN;
         Dec=NaN;
