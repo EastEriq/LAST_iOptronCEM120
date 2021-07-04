@@ -51,6 +51,8 @@ classdef iOptronCEM120 < obs.mount
         % constructor and destructor
         function I=iOptronCEM120(id)
             % does nothing, connecting to port in a separate method
+            % Calls the parent constructor
+            I=I@obs.mount(id);
         end
         
         function delete(I)
