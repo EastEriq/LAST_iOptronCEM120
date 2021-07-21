@@ -28,7 +28,7 @@ function success=connect(I,Port)
             delete(instrfind('Port',Port))
         end
     catch
-        I.LastError=['cannot delete Port object ' Port ' -maybe OS disconnected it?'];
+        I.LastError=['cannot delete Port object ' Port ' for iOptron mount - maybe OS disconnected it?'];
     end
 
     try
@@ -41,7 +41,7 @@ function success=connect(I,Port)
             %  transitioned...
         end
     catch
-        I.LastError=['cannot create Port object ' Port ];
+        I.LastError=['cannot create Port object ' Port ' for iOptron mount'];
     end
 
     try
@@ -54,7 +54,7 @@ function success=connect(I,Port)
         I.Port=Port; % I.SerialResource.Port; % but only for serial; RemoteHost for tcp
         success = check_for_mount(I);
     catch
-        I.LastError=['Port ' Port ' cannot be opened'];
+        I.LastError=['Port ' Port ' for iOptron mount cannot be opened'];
         delete(instrfind('Port',Port)) % (catch also error here?)
     end
 end
